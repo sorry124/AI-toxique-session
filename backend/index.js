@@ -1,6 +1,5 @@
 // backend/index.js
 const express = require('express');
-const QRCode = require('qrcode');
 const { default: makeWASocket } = require('@whiskeysockets/baileys');
 
 const app = express();
