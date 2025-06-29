@@ -1,22 +1,39 @@
+// backend/index.js
 const express = require('express');
-const { startBaileysSession } = require('./baileysSession');
-const path = require('path');
+const QRCode = require('qrcode');
+const { default: makeWASocket } = require('@whiskeysockets/baileys');
 
 const app = express();
-const port = process.env.PORT || 3000;
+let currentQR = null;
 
-app.use(express.static(path.join(__dirname, '../frontend')));
+async function startBaileys() {
+  const sock = makeWASocket({ printQRInTerminal: true });
 
-app.get('/start-session/:userJid', async (req, res) => {
-  const userJid = req.params.userJid;
+  sock.ev.on('connection.update', update => {
+    if (update.qr) {
+      currentQR = update.qr;
+      console.log('QR:', currentQR);
+    }
+    if (update.connection === 'open') {
+      currentQR = null;
+      console.log('Connected');
+    }
+  });
+}
+
+startBaileys();
+
+app.get('/api/qr', async (req, res) => {
+  if (!currentQR) {
+    return res.status(404).json({ error: 'Pas de QR code' });
+  }
   try {
-    const sock = await startBaileysSession(userJid);
-    res.json({ success: true, message: 'Session started for ' + userJid });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    const svg = await QRCode.toString(currentQR, { type: 'svg' });
+    const base64SVG = Buffer.from(svg).toString('base64');
+    res.json({ qr: base64SVG });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Serveur lancé sur http://localhost:${port}`);
-});
+app.listen(8000, () => console.log('Serveur démarré sur http://localhost:8000'));
