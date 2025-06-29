@@ -1,11 +1,11 @@
 const qrContainer = document.getElementById('qr-container');
-const loadingSpinner = document.getElementById('loading-spinner');
-const errorMessage = document.getElementById('error-message');
+const loadingSpinner = document.getElementById('spinner');
+const errorMessage = document.getElementById('error');
 
 async function fetchQR() {
   try {
-    errorMessage.style.display = 'none';   // cacher l’erreur
-    loadingSpinner.style.display = 'block'; // afficher spinner pendant chargement
+    errorMessage.style.display = 'none';
+    loadingSpinner.style.display = 'block';
 
     const response = await fetch('/api/qr');
     if (!response.ok) throw new Error('Erreur réseau');
@@ -13,23 +13,20 @@ async function fetchQR() {
     const data = await response.json();
 
     if (data.qr) {
-      // Affiche le QR code en image SVG ou base64 selon ce que tu renvoies
-      qrContainer.innerHTML = `<img src="data:image/svg+xml;base64,${btoa(data.qr)}" alt="QR Code">`;
-
-      loadingSpinner.style.display = 'none';  // cacher spinner
+      // Affiche le QR code en base64 (doit être déjà encodé côté backend)
+      qrContainer.innerHTML = `<img src="data:image/svg+xml;base64,${data.qr}" alt="QR Code">`;
+      loadingSpinner.style.display = 'none';
+      document.getElementById('message').textContent = 'Scannez ce QR code avec WhatsApp';
     } else {
       throw new Error('QR code non généré');
     }
   } catch (e) {
-    loadingSpinner.style.display = 'none';    // cacher spinner
-    qrContainer.innerHTML = '';                // vider QR
-    errorMessage.style.display = 'block';     // afficher erreur
+    loadingSpinner.style.display = 'none';
+    qrContainer.innerHTML = '';
+    errorMessage.style.display = 'block';
     errorMessage.textContent = `Erreur: ${e.message}`;
   }
 }
 
-// Polling toutes les 3 secondes
 setInterval(fetchQR, 3000);
-
-// Premier appel direct au chargement page
 fetchQR();
