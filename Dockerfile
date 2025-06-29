@@ -1,20 +1,16 @@
-# Utilise node officiel stable
-FROM node:18-alpine
+FROM node:18
 
-# Définit le répertoire de travail
-WORKDIR /app
+# Installer git (Debian/Ubuntu)
+RUN apt-get update && apt-get install -y git
 
-# Copie package.json et package-lock.json (si présent)
+# Copier package.json et package-lock.json
 COPY package*.json ./
 
-# Installe les dépendances
+# Installer les dépendances (production seulement)
 RUN npm install --production
 
-# Copie tout le code
+# Copier le reste du code
 COPY . .
 
-# Expose le port défini
-EXPOSE 3000
-
-# Démarre le serveur
-CMD ["npm", "start"]
+# Démarrer l’application
+CMD ["node", "server.js"]
