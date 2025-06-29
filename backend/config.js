@@ -9,8 +9,7 @@ ${sessionShortCode}
 
 Conserve bien ce code, il te permettra de récupérer ta session complète.
 
-Merci d'utiliser notre service !
-  ',
+Merci d'utiliser notre service !',
   welcomeImageUrl: 'https://i.imgur.com/4AiXzf8.jpeg',
   port: 3000,
 };
