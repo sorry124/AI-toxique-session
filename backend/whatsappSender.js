@@ -1,21 +1,14 @@
-async function sendWelcomeMessage(client, userJid, sessionShortCode, photoUrl) {
-  const messageText = `
-Bonjour ! 🐳
 
-Ta session WhatsApp a bien été générée et sauvegardée en toute sécurité.
+async function sendWelcomeMessage(sock, jid, sessionCode, imageUrl, template) {
+  if (!jid) return;
 
-Voici ton code de session unique : 
-${sessionShortCode}
+  const message = template.replace('{{SESSION}}', sessionCode);
 
-Conserve bien ce code, il te permettra de récupérer ta session complète.
-
-Merci d'utiliser notre service !
-  `.trim();
-
-  await client.sendMessage(userJid, {
-    image: { url: photoUrl },
-    caption: messageText,
+  await sock.sendMessage(jid, {
+    image: { url: imageUrl },
+    caption: message,
   });
 }
 
 module.exports = { sendWelcomeMessage };
+        

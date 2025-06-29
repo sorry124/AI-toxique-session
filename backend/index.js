@@ -1,38 +1,29 @@
-// backend/index.js
+
+require('dotenv').config();
 const express = require('express');
-const { default: makeWASocket } = require('@whiskeysockets/baileys');
+const cors = require('cors');
+const QRCode = require('qrcode');
+const { startBaileysSession } = require('./baileysSession');
 
 const app = express();
-let currentQR = null;
+app.use(cors());
 
-async function startBaileys() {
-  const sock = makeWASocket({ printQRInTerminal: true });
+let latestQR = null;
+let userJid = process.env.OWNER_JID || '';
 
-  sock.ev.on('connection.update', update => {
-    if (update.qr) {
-      currentQR = update.qr;
-      console.log('QR:', currentQR);
-    }
-    if (update.connection === 'open') {
-      currentQR = null;
-      console.log('Connected');
-    }
-  });
-}
-
-startBaileys();
+startBaileysSession(userJid, (qr) => {
+  latestQR = qr;
+});
 
 app.get('/api/qr', async (req, res) => {
-  if (!currentQR) {
-    return res.status(404).json({ error: 'Pas de QR code' });
-  }
+  if (!latestQR) return res.status(404).json({ error: 'QR non disponible' });
   try {
-    const svg = await QRCode.toString(currentQR, { type: 'svg' });
-    const base64SVG = Buffer.from(svg).toString('base64');
-    res.json({ qr: base64SVG });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+    const qrImage = await QRCode.toDataURL(latestQR);
+    res.json({ qr: qrImage });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur QR' });
   }
 });
 
 app.listen(8000, () => console.log('Serveur démarré sur http://localhost:8000'));
+        

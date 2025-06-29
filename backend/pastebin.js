@@ -1,24 +1,26 @@
+
 const axios = require('axios');
-const { PASTEBIN_API_KEY, PASTEBIN_API_USER_KEY } = require('./config');
 
-async function uploadSessionToPastebin(sessionData) {
-  const params = new URLSearchParams();
-  params.append('api_dev_key', PASTEBIN_API_KEY);
-  params.append('api_user_key', PASTEBIN_API_USER_KEY);
-  params.append('api_option', 'paste');
-  params.append('api_paste_code', sessionData);
-  params.append('api_paste_private', '1');
-  params.append('api_paste_expire_date', '1D'); // expiration 1 jour
-  params.append('api_paste_name', `WhatsAppSession-${Date.now()}`);
+async function uploadSessionToPastebin(sessionContent) {
+  const pasteKey = process.env.PASTEBIN_API_KEY;
+  const username = process.env.PASTEBIN_USERNAME;
 
-  try {
-    const response = await axios.post('https://pastebin.com/api/api_post.php', params.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-    return response.data; // URL du paste créé
-  } catch (error) {
-    throw new Error('Erreur Pastebin: ' + error.message);
-  }
+  const res = await axios.post('https://pastebin.com/api/api_post.php', null, {
+    params: {
+      api_dev_key: pasteKey,
+      api_option: 'paste',
+      api_user_key: '',
+      api_paste_code: `BOT-${Date.now()}`,
+      api_paste_name: 'WHATSAPP_SESSION',
+      api_paste_private: 1,
+      api_paste_expire_date: '1D',
+      api_paste_format: 'text',
+      api_paste_text: sessionContent,
+    },
+  });
+
+  return res.data;
 }
 
 module.exports = { uploadSessionToPastebin };
+        
