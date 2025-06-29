@@ -3,11 +3,18 @@ global.crypto = crypto;
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const QRCode = require('qrcode');
 const { startBaileysSession } = require('./baileysSession');
 
 const app = express();
 app.use(cors());
+
+// Sert les fichiers frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 let latestQR = null;
 let userJid = process.env.OWNER_JID || '';
@@ -27,4 +34,3 @@ app.get('/api/qr', async (req, res) => {
 });
 
 app.listen(8000, () => console.log('Serveur démarré sur http://localhost:8000'));
-        
