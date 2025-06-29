@@ -1,4 +1,5 @@
-
+const crypto = require('crypto');
+global.crypto = crypto;
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
