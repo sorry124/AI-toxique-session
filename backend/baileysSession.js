@@ -1,42 +1,36 @@
-
-const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
-const { sendWelcomeMessage } = require('./whatsappSender');
-const { uploadSessionToPastebin } = require('./pastebin');
-
+const { default: makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
 const fs = require('fs');
-const path = require('path');
 
-async function startBaileysSession(userJid, onQR) {
-  const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, '../session'));
-  const sock = makeWASocket({ auth: state });
+const { state, saveState } = useSingleFileAuthState('./session.json');
 
-  sock.ev.on('creds.update', saveCreds);
+function startBaileysSession(userJid, onQR) {
+  const sock = makeWASocket({
+    auth: state,
+    printQRInTerminal: false,
+    browser: ['Ubuntu', 'Chrome', '22.04'], // 👈 simulate un appareil classique
+  });
 
-  sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-    if (qr && typeof onQR === 'function') onQR(qr);
+  sock.ev.on('connection.update', (update) => {
+    const { connection, qr } = update;
+
+    if (qr) {
+      console.log('[QR] Nouveau QR généré');
+      onQR(qr);
+    }
 
     if (connection === 'open') {
-      console.log('Connecté à WhatsApp');
-
-      try {
-        const sessionJSON = JSON.stringify(state, null, 2);
-        const pasteUrl = await uploadSessionToPastebin(sessionJSON);
-
-        const sessionShortCode = `BABY-MD~BOT~${Buffer.from(pasteUrl).toString('base64').slice(0, 20)}`;
-        await sendWelcomeMessage(sock, userJid, sessionShortCode, process.env.PHOTO_URL, process.env.WELCOME_MESSAGE_TEMPLATE);
-        console.log('Session envoyée avec succès.');
-      } catch (err) {
-        console.error('Erreur lors de l’envoi du message:', err);
-      }
+      console.log('[OK] Connecté à WhatsApp ✅');
     }
 
     if (connection === 'close') {
-      console.log('Connexion fermée');
+      const shouldReconnect = update.lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log('[!] Déconnecté. Reconnexion :', shouldReconnect);
+      if (shouldReconnect) startBaileysSession(userJid, onQR);
     }
   });
 
-  return sock;
+  sock.ev.on('creds.update', saveState);
 }
 
 module.exports = { startBaileysSession };
-        
