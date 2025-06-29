@@ -2,7 +2,8 @@ const makeWASocket = require('@whiskeysockets/baileys').default;
 const { Boom } = require('@hapi/boom');
 const { sendWelcomeMessage } = require('./whatsappSender');
 const { uploadSessionToPastebin } = require('./pastebin');
-const { PHOTO_URL, WELCOME_MESSAGE_TEMPLATE } = require('./config');
+await sendWelcomeMessage(sock, userJid, sessionShortCode, PHOTO_URL);
+// Sans WELCOME_MESSAGE_TEMPLATE si tu ne l’utilises pas encore.
 
 async function startBaileysSession(userJid) {
   const sock = makeWASocket({
