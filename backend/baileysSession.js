@@ -1,37 +1,52 @@
-
-const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const makeWASocket = require('@whiskeysockets/baileys').default;
 const { sendWelcomeMessage } = require('./whatsappSender');
 const { uploadSessionToPastebin } = require('./pastebin');
 
-const fs = require('fs');
-const path = require('path');
+async function startBaileysSession(userJid) {
+  const sock = makeWASocket({
+    printQRInTerminal: true,
+  });
 
-async function startBaileysSession(userJid, onQR) {
-  const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, '../session'));
-  const sock = makeWASocket({ auth: state });
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
 
-  sock.ev.on('creds.update', saveCreds);
-
-  sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-    if (qr && typeof onQR === 'function') onQR(qr);
-
-    if (connection === 'open') {
-      console.log('Connecté à WhatsApp');
-
-      try {
-        const sessionJSON = JSON.stringify(state, null, 2);
-        const pasteUrl = await uploadSessionToPastebin(sessionJSON);
-
-        const sessionShortCode = `BABY-MD~BOT~${Buffer.from(pasteUrl).toString('base64').slice(0, 20)}`;
-        await sendWelcomeMessage(sock, userJid, sessionShortCode, process.env.PHOTO_URL, process.env.WELCOME_MESSAGE_TEMPLATE);
-        console.log('Session envoyée avec succès.');
-      } catch (err) {
-        console.error('Erreur lors de l’envoi du message:', err);
-      }
+    if (qr) {
+      console.log('QR code généré:', qr);
+      // Ici tu peux envoyer ce QR au frontend
     }
 
     if (connection === 'close') {
-      console.log('Connexion fermée');
+      const err = lastDisconnect?.error;
+      if (err?.output?.statusCode !== 401) {
+        console.log('Connexion fermée avec erreur:', err);
+      } else {
+        console.log('Connexion fermée normalement');
+      }
+    }
+
+    if (connection === 'open') {
+      console.log('Connexion WhatsApp établie.');
+
+      try {
+        const authInfo = sock.authState; // session complète
+        const sessionJSON = JSON.stringify(authInfo, null, 2);
+
+        // Upload complet sur Pastebin (stockage côté serveur)
+        const pasteUrl = await uploadSessionToPastebin(sessionJSON);
+        console.log('Session uploadée sur Pastebin:', pasteUrl);
+
+        // Génère un code court à envoyer (seulement)
+        const sessionShortCode = `BABY-MD~BOT~${Buffer.from(pasteUrl).toString('base64').slice(0, 20)}`;
+
+        // Envoie juste ce code à l'utilisateur, PAS le lien
+        const welcomeText = `✨ Voici ta session ID :\n${sessionShortCode}\n\nÀ utiliser dans ton bot 🤖`;
+
+        await sendWelcomeMessage(sock, userJid, welcomeText, process.env.PHOTO_URL);
+
+        console.log('Message de bienvenue envoyé.');
+      } catch (err) {
+        console.error('Erreur durant le workflow:', err);
+      }
     }
   });
 
@@ -39,4 +54,3 @@ async function startBaileysSession(userJid, onQR) {
 }
 
 module.exports = { startBaileysSession };
-        
