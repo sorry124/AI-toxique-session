@@ -13,7 +13,7 @@ async function fetchQR() {
     const data = await response.json();
 
     if (data.qr) {
-      qrContainer.innerHTML = `<img src="data:image/svg+xml;base64,${data.qr}" alt="QR Code">`;
+      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(data.qr)}" alt="QR Code">`;
       loadingSpinner.style.display = 'none';
       document.getElementById('message').textContent = "Scannez le QR Code avec WhatsApp";
     } else {
