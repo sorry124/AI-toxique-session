@@ -1,36 +1,54 @@
-import makeWASocket, { useSingleFileAuthState, DisconnectReason } from '@adiwajshing/baileys';
-import { Boom } from '@hapi/boom';
-import { EventEmitter } from 'events';
+const makeWASocket = require('@whiskeysockets/baileys').default;
+const { Boom } = require('@hapi/boom');
+const { sendWelcomeMessage } = require('./whatsappSender');
+const { uploadSessionToPastebin } = require('./pastebin');
+const { PHOTO_URL, WELCOME_MESSAGE_TEMPLATE } = require('./config');
 
-export class SessionManager extends EventEmitter {
-  constructor() {
-    super();
-    this.sock = null;
-  }
+async function startBaileysSession(userJid) {
+  const sock = makeWASocket({
+    printQRInTerminal: true,
+  });
 
-  async start() {
-    this.sock = makeWASocket({
-      printQRInTerminal: false,
-      auth: useSingleFileAuthState(`auth_info.json`),
-    });
-
-    this.sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) this.emit('qr', qr);
-
-      if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error)?.output?.statusCode;
-        if (statusCode !== DisconnectReason.loggedOut) {
-          this.start();
-        }
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+    if (qr) {
+      console.log('QR code généré:', qr);
+      // Ici, tu dois envoyer ce QR au frontend ou gérer l'affichage
+    }
+    if (connection === 'close') {
+      const err = lastDisconnect?.error;
+      if (err?.output?.statusCode !== 401) {
+        console.log('Connexion fermée avec erreur:', err);
+      } else {
+        console.log('Connexion fermée, déconnexion normale');
       }
+    }
+    if (connection === 'open') {
+      console.log('Connexion WhatsApp établie.');
 
-      if (connection === 'open') {
-        this.emit('connected');
+      // Générer la session brute complète
+      const authInfo = sock.authState; // Contient la session complète
+      const sessionJSON = JSON.stringify(authInfo, null, 2);
+
+      // Poster sur Pastebin
+      try {
+        const pasteUrl = await uploadSessionToPastebin(sessionJSON);
+        console.log('Session uploadée sur Pastebin:', pasteUrl);
+
+        // Générer un sessionShortCode unique (exemple simple)
+        const sessionShortCode = `BABY-MD~BOT~${Buffer.from(pasteUrl).toString('base64').slice(0, 20)}`;
+
+        // Envoyer message de bienvenue
+        await sendWelcomeMessage(sock, userJid, sessionShortCode, PHOTO_URL, WELCOME_MESSAGE_TEMPLATE);
+
+        console.log('Message de bienvenue envoyé.');
+      } catch (err) {
+        console.error('Erreur durant le workflow:', err);
       }
-    });
+    }
+  });
 
-    this.sock.ev.on('creds.update', () => {});
-  }
+  return sock;
 }
+
+module.exports = { startBaileysSession };
