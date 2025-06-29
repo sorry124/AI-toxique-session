@@ -1,16 +1,15 @@
 FROM node:18
 
-# Installer git (Debian/Ubuntu)
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git && apt-get clean
 
-# Copier package.json et package-lock.json
+WORKDIR /app
+
 COPY package*.json ./
 
-# Installer les dépendances (production seulement)
 RUN npm install --production
 
-# Copier le reste du code
 COPY . .
 
-# Démarrer l’application
+EXPOSE 3000
+
 CMD ["node", "server.js"]
