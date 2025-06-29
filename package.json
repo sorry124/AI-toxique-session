@@ -1,0 +1,17 @@
+{
+  "name": "AI-toxique-session-manager",
+  "version": "1.0.0",
+  "description": "Génération de session WhatsApp via Baileys avec upload Pastebin et envoi message",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js"
+  },
+  "author": "Moudy",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.4",
+    "axios": "^1.4.0",
+    "express": "^4.18.2",
+    "dotenv": "^16.0.3"
+  }
+}
