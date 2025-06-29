@@ -1,15 +1,17 @@
-export const config = {
-  pastebinApiKey: 'Tto1zQt8Ma5j7h_K9E_FG7fZJWhFDcIx',
-  welcomeMessage: 'Bonjour ! 🐳
+module.exports = {
+  PASTEBIN_API_KEY: process.env.PASTEBIN_API_KEY,
+  PASTEBIN_API_USER_KEY: process.env.PASTEBIN_API_USER_KEY,
+  PHOTO_URL: process.env.PHOTO_URL,
+  WELCOME_MESSAGE_TEMPLATE: `
+Bonjour ! 🐳
 
 Ta session WhatsApp a bien été générée et sauvegardée en toute sécurité.
 
 Voici ton code de session unique : 
-${sessionShortCode}
+{sessionShortCode}
 
 Conserve bien ce code, il te permettra de récupérer ta session complète.
 
-Merci d'utiliser notre service !',
-  welcomeImageUrl: 'https://i.imgur.com/4AiXzf8.jpeg',
-  port: 3000,
+Merci d'utiliser notre service !
+`.trim(),
 };
