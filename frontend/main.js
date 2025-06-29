@@ -1,6 +1,7 @@
 const qrContainer = document.getElementById('qr-container');
 const loadingSpinner = document.getElementById('spinner');
 const errorMessage = document.getElementById('error');
+const messageText = document.getElementById('message');
 
 async function fetchQR() {
   try {
@@ -8,14 +9,21 @@ async function fetchQR() {
     loadingSpinner.style.display = 'block';
 
     const response = await fetch('/api/qr');
-    if (!response.ok) throw new Error('Erreur réseau');
-
     const data = await response.json();
 
     if (data.qr) {
-      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(data.qr)}" alt="QR Code">`;
+      qrContainer.innerHTML = ''; // clear previous QR
+      new QRCode(qrContainer, {
+        text: data.qr,
+        width: 256,
+        height: 256,
+        colorDark: '#000',
+        colorLight: '#fff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
       loadingSpinner.style.display = 'none';
-      document.getElementById('message').textContent = "Scannez le QR Code avec WhatsApp";
+      messageText.textContent = '✅ Scannez le QR code avec WhatsApp';
     } else {
       throw new Error('QR code non généré');
     }
@@ -23,7 +31,7 @@ async function fetchQR() {
     loadingSpinner.style.display = 'none';
     qrContainer.innerHTML = '';
     errorMessage.style.display = 'block';
-    errorMessage.textContent = `Erreur: ${e.message}`;
+    errorMessage.textContent = `❌ Erreur: ${e.message}`;
   }
 }
 
