@@ -1,8 +1,10 @@
-export async function sendWelcomeMessage(sock, userJid, pasteUrl, welcomeMessage, welcomeImageUrl) {
-  const messageText = `${welcomeMessage}\n${pasteUrl}`;
+async function sendWelcomeMessage(client, userJid, sessionShortCode, photoUrl, messageTemplate) {
+  const messageText = messageTemplate.replace('{sessionShortCode}', sessionShortCode);
 
-  await sock.sendMessage(userJid, {
-    image: { url: welcomeImageUrl },
+  await client.sendMessage(userJid, {
+    image: { url: photoUrl },
     caption: messageText,
   });
 }
+
+module.exports = { sendWelcomeMessage };
